@@ -9,19 +9,44 @@ import java.util.Locale
 
 object Logger {
     private const val TAG = "MusicApp"
+    private const val MAX_LOG_FILE_SIZE = 2 * 1024 * 1024L // 2MB
+    private const val MAX_LOG_FILES = 5
+
+    private var logDir: File? = null
     private var logFile: File? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
     private val fileDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
     fun init(context: Context) {
         val dir = context.getExternalFilesDir(null) ?: context.filesDir
-        val logDir = File(dir, "logs")
-        if (!logDir.exists()) logDir.mkdirs()
-        logFile = File(logDir, "app_${fileDateFormat.format(Date())}.log")
+        logDir = File(dir, "logs")
+        logDir?.let {
+            if (!it.exists()) it.mkdirs()
+            rotateLogsIfNeeded(it)
+            logFile = File(it, "app_${fileDateFormat.format(Date())}.log")
+        }
+    }
+
+    private fun rotateLogsIfNeeded(dir: File) {
+        val files = dir.listFiles { f -> f.name.endsWith(".log") }?.sortedBy { it.lastModified() } ?: return
+        if (files.size >= MAX_LOG_FILES) {
+            files.take(files.size - MAX_LOG_FILES + 1).forEach { it.delete() }
+        }
+    }
+
+    private fun checkLogFileSize() {
+        val file = logFile ?: return
+        if (file.length() > MAX_LOG_FILE_SIZE) {
+            logDir?.let { dir ->
+                val index = dir.listFiles { f -> f.name.endsWith(".log") }?.size ?: 0
+                logFile = File(dir, "app_${fileDateFormat.format(Date())}_$index.log")
+            }
+        }
     }
 
     private fun writeToFile(level: String, msg: String) {
         try {
+            checkLogFileSize()
             logFile?.appendText("${dateFormat.format(Date())} [$level] $msg\n")
         } catch (_: Exception) {}
     }

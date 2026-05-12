@@ -11,8 +11,8 @@ import kotlinx.coroutines.withContext
 
 object MediaScanner {
 
-    suspend fun scanLocalMusic(context: Context): List<Song> = withContext(Dispatchers.IO) {
-        val songs = mutableListOf<Song>()
+    suspend fun scanLocalMusic(context: Context, existingSongs: List<Song> = emptyList()): ScanResult = withContext(Dispatchers.IO) {
+        val scannedSongs = mutableListOf<Song>()
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -48,7 +48,7 @@ object MediaScanner {
                     Uri.parse("content://media/external/audio/albumart"), albumId
                 ).toString()
 
-                songs.add(
+                scannedSongs.add(
                     Song(
                         id = id,
                         title = cursor.getString(titleCol) ?: "未知标题",
@@ -62,7 +62,19 @@ object MediaScanner {
             }
         }
 
-        Logger.i("扫描到 ${songs.size} 首本地歌曲")
-        songs
+        val existingMap = existingSongs.associateBy { it.id }
+        val toAdd = scannedSongs.filter { it.id !in existingMap }
+        val scannedIds = scannedSongs.map { it.id }.toSet()
+        val toRemove = existingSongs.filter { it.id !in scannedIds }
+        val unchanged = scannedSongs.filter { it.id in existingMap }
+
+        Logger.i("扫描到 ${scannedSongs.size} 首本地歌曲，新增 ${toAdd.size} 首，移除 ${toRemove.size} 首，不变 ${unchanged.size} 首")
+        ScanResult(toAdd, toRemove, unchanged)
     }
 }
+
+data class ScanResult(
+    val toAdd: List<Song>,
+    val toRemove: List<Song>,
+    val unchanged: List<Song>
+)

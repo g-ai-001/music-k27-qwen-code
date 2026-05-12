@@ -28,9 +28,14 @@ object LyricParser {
     }
 
     fun loadLyricFromFile(songPath: String): List<LyricLine> {
-        val lrcFile = File(songPath.replaceAfterLast(".", "lrc"))
+        val lrcPath = if (songPath.contains('.')) {
+            songPath.substringBeforeLast('.') + ".lrc"
+        } else {
+            "$songPath.lrc"
+        }
+        val lrcFile = File(lrcPath)
         return if (lrcFile.exists()) {
-            parse(lrcFile.readText())
+            parse(lrcFile.readText(Charsets.UTF_8))
         } else {
             emptyList()
         }
