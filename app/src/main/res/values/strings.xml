@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">music-k27-qwen-code</string>
+    <string name="home">首页</string>
+    <string name="me">我的</string>
+    <string name="search_hint">搜索本地音乐…</string>
+    <string name="recently_played">最近播放</string>
+    <string name="local_playlists">本地歌单</string>
+    <string name="all_songs">所有歌曲</string>
+    <string name="my_favorites">我的收藏</string>
+    <string name="create_playlist">新建歌单</string>
+    <string name="song_list">歌曲列表</string>
+    <string name="recommended">推荐</string>
+    <string name="playlists">歌单</string>
+    <string name="artists">歌手</string>
+    <string name="albums">专辑</string>
+    <string name="cover_mode">封面模式</string>
+    <string name="lyrics_mode">歌词模式</string>
+    <string name="local_user">本地用户</string>
+    <string name="favorites">收藏</string>
+    <string name="local_files">本地</string>
+    <string name="audiobooks">有声</string>
+    <string name="purchased">已购</string>
+    <string name="created_playlists">自建歌单</string>
+    <string name="member_center">会员中心</string>
+    <string name="theme">装扮</string>
+    <string name="daily_quote">日签</string>
+    <string name="follow">关注</string>
+</resources>
