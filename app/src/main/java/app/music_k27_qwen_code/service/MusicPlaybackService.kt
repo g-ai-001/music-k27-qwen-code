@@ -223,5 +223,15 @@ class MusicPlaybackService : MediaSessionService(), AudioManager.OnAudioFocusCha
                 connectionResult.availablePlayerCommands
             )
         }
+
+        override fun onPause(session: MediaSession, controller: MediaSession.ControllerInfo): ListenableFuture<MediaSession.SessionResult> {
+            pausedByFocusLoss = false
+            return super.onPause(session, controller)
+        }
+
+        override fun onPlay(session: MediaSession, controller: MediaSession.ControllerInfo): ListenableFuture<MediaSession.SessionResult> {
+            pausedByFocusLoss = false
+            return super.onPlay(session, controller)
+        }
     }
 }
