@@ -3,6 +3,7 @@ package app.music_k27_qwen_code
 import android.app.Application
 import app.music_k27_qwen_code.data.AppDatabase
 import app.music_k27_qwen_code.data.repository.FavoriteRepository
+import app.music_k27_qwen_code.data.repository.PlaybackSettingsRepository
 import app.music_k27_qwen_code.data.repository.PlaylistRepository
 import app.music_k27_qwen_code.data.repository.RecentPlayRepository
 import app.music_k27_qwen_code.data.repository.SongRepository
@@ -14,6 +15,7 @@ class MusicApplication : Application() {
     val playlistRepository by lazy { PlaylistRepository(database.playlistDao()) }
     val favoriteRepository by lazy { FavoriteRepository(database.favoriteDao()) }
     val recentPlayRepository by lazy { RecentPlayRepository(database.recentPlayDao()) }
+    val playbackSettingsRepository by lazy { PlaybackSettingsRepository(this) }
 
     override fun onCreate() {
         super.onCreate()

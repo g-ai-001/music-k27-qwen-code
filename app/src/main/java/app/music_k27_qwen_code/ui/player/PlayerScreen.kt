@@ -24,6 +24,9 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
@@ -56,6 +59,7 @@ import app.music_k27_qwen_code.ui.theme.DeepPurple
 import app.music_k27_qwen_code.ui.theme.HeartRed
 import app.music_k27_qwen_code.utils.LyricLine
 import app.music_k27_qwen_code.viewmodel.PlayerUiState
+import app.music_k27_qwen_code.viewmodel.RepeatMode
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
 
 @Composable
@@ -191,6 +195,42 @@ fun PlayerScreen(
                             contentDescription = "下一首",
                             tint = Color.White,
                             modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val shuffleColor = if (state.shuffleEnabled) AccentGreen else Color.White.copy(alpha = 0.7f)
+                    IconButton(onClick = { playerViewModel.toggleShuffle() }) {
+                        Icon(
+                            imageVector = Icons.Filled.Shuffle,
+                            contentDescription = "随机播放",
+                            tint = shuffleColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    val repeatIcon = when (state.repeatMode) {
+                        RepeatMode.ONE -> Icons.Filled.RepeatOne
+                        else -> Icons.Filled.Repeat
+                    }
+                    val repeatColor = if (state.repeatMode != RepeatMode.OFF) {
+                        AccentGreen
+                    } else {
+                        Color.White.copy(alpha = 0.7f)
+                    }
+                    IconButton(onClick = { playerViewModel.cycleRepeatMode() }) {
+                        Icon(
+                            imageVector = repeatIcon,
+                            contentDescription = "循环模式",
+                            tint = repeatColor,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

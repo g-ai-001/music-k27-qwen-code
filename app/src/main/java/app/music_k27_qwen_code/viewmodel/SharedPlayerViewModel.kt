@@ -21,7 +21,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
+enum class RepeatMode(val value: Int) {
+    OFF(0),
+    ALL(1),
+    ONE(2)
+}
 
 data class PlayerUiState(
     val currentSong: Song? = null,
@@ -32,13 +39,16 @@ data class PlayerUiState(
     val currentLyricIndex: Int = -1,
     val isFavorite: Boolean = false,
     val showLyrics: Boolean = false,
-    val queueSongs: List<Song> = emptyList()
+    val queueSongs: List<Song> = emptyList(),
+    val shuffleEnabled: Boolean = false,
+    val repeatMode: RepeatMode = RepeatMode.OFF
 )
 
 class SharedPlayerViewModel(application: Application) : AndroidViewModel(application) {
     private val songRepository = (application as MusicApplication).songRepository
     private val favoriteDao = (application as MusicApplication).database.favoriteDao()
     private val recentPlayDao = (application as MusicApplication).database.recentPlayDao()
+    private val playbackSettingsRepository = (application as MusicApplication).playbackSettingsRepository
 
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
@@ -49,9 +59,11 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
 
     private var favoriteCollectJob: Job? = null
     private var positionUpdateJob: Job? = null
+    private var settingsCollectJob: Job? = null
 
     init {
         initMediaController(application)
+        loadPlaybackSettings()
     }
 
     private fun initMediaController(context: Context) {
@@ -63,12 +75,68 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
                     mediaController = controllerFuture.get()
                     setupPlayerListener()
                     startPositionUpdates()
+                    applyPlaybackSettingsToPlayer()
                 } catch (e: Exception) {
                     Logger.e("MediaController 初始化失败", e)
                 }
             }, MoreExecutors.directExecutor())
         } catch (e: Exception) {
             Logger.e("MediaSessionToken 创建失败", e)
+        }
+    }
+
+    private fun loadPlaybackSettings() {
+        settingsCollectJob?.cancel()
+        settingsCollectJob = viewModelScope.launch {
+            try {
+                launch {
+                    playbackSettingsRepository.shuffleEnabled.collect { enabled ->
+                        _uiState.value = _uiState.value.copy(shuffleEnabled = enabled)
+                        mediaController?.let {
+                            if (it.shuffleModeEnabled != enabled) {
+                                it.shuffleModeEnabled = enabled
+                            }
+                        }
+                    }
+                }
+                launch {
+                    playbackSettingsRepository.repeatMode.collect { modeValue ->
+                        val mode = RepeatMode.entries.find { it.value == modeValue } ?: RepeatMode.OFF
+                        _uiState.value = _uiState.value.copy(repeatMode = mode)
+                        mediaController?.let {
+                            val exoRepeatMode = when (mode) {
+                                RepeatMode.OFF -> Player.REPEAT_MODE_OFF
+                                RepeatMode.ALL -> Player.REPEAT_MODE_ALL
+                                RepeatMode.ONE -> Player.REPEAT_MODE_ONE
+                            }
+                            if (it.repeatMode != exoRepeatMode) {
+                                it.repeatMode = exoRepeatMode
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Logger.e("加载播放设置失败", e)
+            }
+        }
+    }
+
+    private fun applyPlaybackSettingsToPlayer() {
+        val controller = mediaController ?: return
+        viewModelScope.launch {
+            try {
+                val shuffle = playbackSettingsRepository.shuffleEnabled.first()
+                controller.shuffleModeEnabled = shuffle
+                val repeatValue = playbackSettingsRepository.repeatMode.first()
+                controller.repeatMode = when (repeatValue) {
+                    0 -> Player.REPEAT_MODE_OFF
+                    1 -> Player.REPEAT_MODE_ALL
+                    2 -> Player.REPEAT_MODE_ONE
+                    else -> Player.REPEAT_MODE_OFF
+                }
+            } catch (e: Exception) {
+                Logger.e("应用播放设置到播放器失败", e)
+            }
         }
     }
 
@@ -90,6 +158,33 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
                         } catch (e: Exception) {
                             Logger.e("获取歌曲信息失败: $songId", e)
                         }
+                    }
+                }
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                _uiState.value = _uiState.value.copy(shuffleEnabled = shuffleModeEnabled)
+                viewModelScope.launch {
+                    try {
+                        playbackSettingsRepository.setShuffleEnabled(shuffleModeEnabled)
+                    } catch (e: Exception) {
+                        Logger.e("保存随机播放设置失败", e)
+                    }
+                }
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                val mode = when (repeatMode) {
+                    Player.REPEAT_MODE_ALL -> RepeatMode.ALL
+                    Player.REPEAT_MODE_ONE -> RepeatMode.ONE
+                    else -> RepeatMode.OFF
+                }
+                _uiState.value = _uiState.value.copy(repeatMode = mode)
+                viewModelScope.launch {
+                    try {
+                        playbackSettingsRepository.setRepeatMode(mode.value)
+                    } catch (e: Exception) {
+                        Logger.e("保存循环模式设置失败", e)
                     }
                 }
             }
@@ -121,7 +216,6 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private fun updateCurrentSong(song: Song) {
-        // 取消旧的收藏状态收集
         favoriteCollectJob?.cancel()
 
         viewModelScope.launch {
@@ -146,7 +240,6 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
             }
         }
 
-        // 启动新的收藏状态收集
         favoriteCollectJob = viewModelScope.launch {
             try {
                 favoriteDao.isFavorite(song.id).collect { isFav ->
@@ -251,7 +344,7 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         try {
             mediaController?.seekTo(position)
         } catch (e: Exception) {
-            Logger.e(" seekTo 操作失败", e)
+            Logger.e("seekTo 操作失败", e)
         }
     }
 
@@ -274,9 +367,33 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         _uiState.value = _uiState.value.copy(showLyrics = !_uiState.value.showLyrics)
     }
 
+    fun toggleShuffle() {
+        val controller = mediaController ?: return
+        try {
+            controller.shuffleModeEnabled = !controller.shuffleModeEnabled
+        } catch (e: Exception) {
+            Logger.e("切换随机播放失败", e)
+        }
+    }
+
+    fun cycleRepeatMode() {
+        val controller = mediaController ?: return
+        try {
+            val nextMode = when (_uiState.value.repeatMode) {
+                RepeatMode.OFF -> Player.REPEAT_MODE_ALL
+                RepeatMode.ALL -> Player.REPEAT_MODE_ONE
+                RepeatMode.ONE -> Player.REPEAT_MODE_OFF
+            }
+            controller.repeatMode = nextMode
+        } catch (e: Exception) {
+            Logger.e("切换循环模式失败", e)
+        }
+    }
+
     override fun onCleared() {
         favoriteCollectJob?.cancel()
         positionUpdateJob?.cancel()
+        settingsCollectJob?.cancel()
         mediaController?.release()
         super.onCleared()
     }
