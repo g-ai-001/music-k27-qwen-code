@@ -43,7 +43,6 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
 
     private var mediaController: MediaController? = null
     private val _playlist = MutableStateFlow<List<Song>>(emptyList())
-    private var currentIndex: Int = 0
 
     init {
         initMediaController(application)
@@ -65,9 +64,12 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                mediaItem?.localConfiguration?.uri?.let { uri ->
+                mediaItem?.let { item ->
+                    val songId = item.mediaId.toLongOrNull()
+                        ?: item.localConfiguration?.uri?.lastPathSegment?.toLongOrNull()
+                        ?: return
                     viewModelScope.launch {
-                        val song = songRepository.getSongById(uri.lastPathSegment?.toLongOrNull() ?: 0)
+                        val song = songRepository.getSongById(songId)
                         song?.let { updateCurrentSong(it) }
                     }
                 }
@@ -77,7 +79,7 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         viewModelScope.launch {
             while (true) {
                 mediaController?.let { player ->
-                    val pos = player.currentPosition
+                    val pos = player.currentPosition.coerceAtLeast(0)
                     val dur = player.duration.coerceAtLeast(0)
                     val lyrics = _uiState.value.lyrics
                     val idx = LyricParser.findCurrentLine(lyrics, pos)
@@ -95,7 +97,8 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
     private fun updateCurrentSong(song: Song) {
         viewModelScope.launch {
             val lyrics = LyricParser.loadLyricFromFile(song.path)
-            favoriteDao.isFavorite(song.id).collect { fav ->
+            val isFav = favoriteDao.isFavorite(song.id)
+            isFav.collect { fav ->
                 _uiState.value = _uiState.value.copy(
                     currentSong = song,
                     lyrics = lyrics,
@@ -112,8 +115,8 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun playSongs(songs: List<Song>, startIndex: Int = 0) {
+        if (songs.isEmpty() || startIndex !in songs.indices) return
         _playlist.value = songs
-        currentIndex = startIndex
         val controller = mediaController ?: return
         controller.clearMediaItems()
         songs.forEach { song ->
@@ -133,9 +136,6 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         controller.seekTo(startIndex, 0)
         controller.prepare()
         controller.play()
-        if (songs.isNotEmpty()) {
-            updateCurrentSong(songs[startIndex])
-        }
         Logger.i("播放列表: ${songs.size} 首, 起始索引: $startIndex")
     }
 

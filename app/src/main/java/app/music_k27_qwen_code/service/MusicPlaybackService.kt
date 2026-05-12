@@ -14,6 +14,11 @@ import app.music_k27_qwen_code.R
 import app.music_k27_qwen_code.utils.Logger
 
 class MusicPlaybackService : MediaSessionService() {
+    companion object {
+        private const val NOTIFICATION_ID = 1001
+        private const val CHANNEL_ID = "music_playback_channel"
+    }
+
     private var mediaSession: MediaSession? = null
     private var exoPlayer: ExoPlayer? = null
     private var notificationManager: PlayerNotificationManager? = null
@@ -29,26 +34,26 @@ class MusicPlaybackService : MediaSessionService() {
 
     private fun setupNotification(player: ExoPlayer) {
         val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
         notificationManager = PlayerNotificationManager.Builder(
-            this, 1, "music_playback_channel"
+            this, NOTIFICATION_ID, CHANNEL_ID
         )
-            .setChannelNameResourceId(R.string.app_name)
-            .setChannelDescriptionResourceId(R.string.app_name)
+            .setChannelNameResourceId(R.string.channel_name)
+            .setChannelDescriptionResourceId(R.string.channel_description)
             .setMediaDescriptionAdapter(object : PlayerNotificationManager.MediaDescriptionAdapter {
                 override fun getCurrentContentTitle(player: Player): CharSequence {
-                    return player.currentMediaItem?.mediaMetadata?.title ?: "未知标题"
+                    return player.currentMediaItem?.mediaMetadata?.title ?: getString(R.string.unknown_title)
                 }
 
                 override fun createCurrentContentIntent(player: Player): PendingIntent? = pendingIntent
 
                 override fun getCurrentContentText(player: Player): CharSequence? {
-                    return player.currentMediaItem?.mediaMetadata?.artist
+                    return player.currentMediaItem?.mediaMetadata?.artist ?: getString(R.string.unknown_artist)
                 }
 
                 override fun getCurrentLargeIcon(
@@ -56,12 +61,24 @@ class MusicPlaybackService : MediaSessionService() {
                     callback: PlayerNotificationManager.BitmapCallback
                 ) = null
             })
+            .setNotificationListener(object : PlayerNotificationManager.NotificationListener {
+                override fun onNotificationPosted(notificationId: Int, notification: Notification, ongoing: Boolean) {
+                    startForeground(notificationId, notification)
+                }
+
+                override fun onNotificationCancelled(notificationId: Int, dismissedByUser: Boolean) {
+                    stopSelf()
+                }
+            })
             .build()
             .apply {
                 setPlayer(player)
                 setUseRewindAction(false)
                 setUseFastForwardAction(false)
                 setUseStopAction(false)
+                setUsePreviousAction(true)
+                setUseNextAction(true)
+                setUsePlayPauseActions(true)
             }
     }
 
