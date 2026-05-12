@@ -30,6 +30,7 @@ class MusicPlaybackService : MediaSessionService(), AudioManager.OnAudioFocusCha
     private var audioManager: AudioManager? = null
     private var audioFocusRequest: AudioFocusRequest? = null
     private var hasAudioFocus = false
+    private var pausedByFocusLoss = false
 
     override fun onCreate() {
         super.onCreate()
@@ -163,21 +164,24 @@ class MusicPlaybackService : MediaSessionService(), AudioManager.OnAudioFocusCha
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN -> {
                 Logger.i("音频焦点: GAIN")
-                if (!player.isPlaying) {
+                if (pausedByFocusLoss && !player.isPlaying) {
                     player.play()
                 }
+                pausedByFocusLoss = false
                 player.volume = 1f
             }
             AudioManager.AUDIOFOCUS_LOSS -> {
                 Logger.i("音频焦点: LOSS")
                 hasAudioFocus = false
                 if (player.isPlaying) {
+                    pausedByFocusLoss = true
                     player.pause()
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                 Logger.i("音频焦点: LOSS_TRANSIENT")
                 if (player.isPlaying) {
+                    pausedByFocusLoss = true
                     player.pause()
                 }
             }
