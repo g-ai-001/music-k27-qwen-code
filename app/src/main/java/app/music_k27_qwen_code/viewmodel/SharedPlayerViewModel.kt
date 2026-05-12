@@ -60,6 +60,7 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
     private var favoriteCollectJob: Job? = null
     private var positionUpdateJob: Job? = null
     private var settingsCollectJob: Job? = null
+    private var playerListener: Player.Listener? = null
 
     init {
         initMediaController(application)
@@ -141,7 +142,7 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private fun setupPlayerListener() {
-        mediaController?.addListener(object : Player.Listener {
+        val listener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _uiState.value = _uiState.value.copy(isPlaying = isPlaying)
             }
@@ -188,7 +189,9 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
                     }
                 }
             }
-        })
+        }
+        playerListener = listener
+        mediaController?.addListener(listener)
     }
 
     private fun startPositionUpdates() {
@@ -394,6 +397,8 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         favoriteCollectJob?.cancel()
         positionUpdateJob?.cancel()
         settingsCollectJob?.cancel()
+        playerListener?.let { mediaController?.removeListener(it) }
+        playerListener = null
         mediaController?.release()
         super.onCleared()
     }
