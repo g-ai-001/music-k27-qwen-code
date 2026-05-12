@@ -40,6 +40,13 @@
 - [x] 更新 README.md
 - [x] 创建 Git Tag v0.1.0 发布
 
+### 版本 0.1.1 (已完成)
+**目标**: 修复GitHub Actions构建错误
+- [x] 修复 Room 数据库缺少实体类导致的 KSP 编译错误
+- [x] 创建 PlaylistSongMap、Favorite、RecentPlay 实体类
+- [x] 更新版本号至 0.1.1
+- [x] 通过 GitHub Actions CI 流水线
+
 ### 版本 0.2.0 (待规划)
 **目标**: 完善歌单管理与收藏功能
 - 自建歌单 CRUD

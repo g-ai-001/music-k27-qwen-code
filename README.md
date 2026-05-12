@@ -23,6 +23,10 @@
 
 ## 版本历史
 
+### v0.1.1
+- 修复 Room 数据库 KSP 编译错误（补充缺失的实体类）
+- 完善数据模型：PlaylistSongMap、Favorite、RecentPlay
+
 ### v0.1.0
 - 搭建项目框架与 CI/CD 流水线
 - 实现本地音乐扫描与数据库持久化
