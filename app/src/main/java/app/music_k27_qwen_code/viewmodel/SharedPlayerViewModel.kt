@@ -67,22 +67,28 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         loadPlaybackSettings()
     }
 
-    private fun initMediaController(context: Context) {
+    protected open fun initMediaController(context: Context) {
         try {
             val sessionToken = SessionToken(context, ComponentName(context, MusicPlaybackService::class.java))
             val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
             controllerFuture.addListener({
                 try {
-                    mediaController = controllerFuture.get()
-                    setupPlayerListener()
-                    startPositionUpdates()
-                    applyPlaybackSettingsToPlayer()
+                    onMediaControllerReady(controllerFuture.get())
                 } catch (e: Exception) {
                     Logger.e("MediaController 初始化失败", e)
                 }
             }, MoreExecutors.directExecutor())
         } catch (e: Exception) {
             Logger.e("MediaSessionToken 创建失败", e)
+        }
+    }
+
+    protected open fun onMediaControllerReady(controller: MediaController?) {
+        controller?.let {
+            mediaController = it
+            setupPlayerListener()
+            startPositionUpdates()
+            applyPlaybackSettingsToPlayer()
         }
     }
 
@@ -196,20 +202,19 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
 
     private fun startPositionUpdates() {
         positionUpdateJob?.cancel()
+        val player = mediaController ?: return
         positionUpdateJob = viewModelScope.launch {
-            while (true) {
+            while (isActive) {
                 try {
-                    mediaController?.let { player ->
-                        val pos = player.currentPosition.coerceAtLeast(0)
-                        val dur = player.duration.coerceAtLeast(0)
-                        val lyrics = _uiState.value.lyrics
-                        val idx = LyricParser.findCurrentLine(lyrics, pos)
-                        _uiState.value = _uiState.value.copy(
-                            currentPosition = pos,
-                            duration = dur,
-                            currentLyricIndex = idx
-                        )
-                    }
+                    val pos = player.currentPosition.coerceAtLeast(0)
+                    val dur = player.duration.coerceAtLeast(0)
+                    val lyrics = _uiState.value.lyrics
+                    val idx = LyricParser.findCurrentLine(lyrics, pos)
+                    _uiState.value = _uiState.value.copy(
+                        currentPosition = pos,
+                        duration = dur,
+                        currentLyricIndex = idx
+                    )
                 } catch (e: Exception) {
                     Logger.e("播放位置更新失败", e)
                 }
@@ -397,9 +402,14 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         favoriteCollectJob?.cancel()
         positionUpdateJob?.cancel()
         settingsCollectJob?.cancel()
-        playerListener?.let { mediaController?.removeListener(it) }
+        val listener = playerListener
+        val controller = mediaController
+        if (listener != null && controller != null) {
+            controller.removeListener(listener)
+        }
         playerListener = null
         mediaController?.release()
+        mediaController = null
         super.onCleared()
     }
 }
