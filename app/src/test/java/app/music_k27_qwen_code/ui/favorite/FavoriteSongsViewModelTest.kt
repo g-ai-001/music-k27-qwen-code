@@ -4,9 +4,9 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import app.music_k27_qwen_code.MusicApplication
 import app.music_k27_qwen_code.data.entity.Song
 import app.music_k27_qwen_code.data.repository.FavoriteRepository
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,6 +66,6 @@ class FavoriteSongsViewModelTest {
         viewModel.removeFavorite(1)
         advanceUntilIdle()
 
-        verify { favoriteRepository.removeFavorite(1) }
+        coVerify { favoriteRepository.removeFavorite(1) }
     }
 }
