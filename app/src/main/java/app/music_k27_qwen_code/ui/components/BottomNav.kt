@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import app.music_k27_qwen_code.R
+import app.music_k27_qwen_code.ui.navigation.Routes
 
 @Composable
 fun BottomNavBar(
@@ -22,24 +23,24 @@ fun BottomNavBar(
         NavigationBarItem(
             icon = {
                 Icon(
-                    imageVector = if (currentRoute == "home") Icons.Filled.Home else Icons.Outlined.Home,
+                    imageVector = if (currentRoute == Routes.HOME) Icons.Filled.Home else Icons.Outlined.Home,
                     contentDescription = stringResource(R.string.home)
                 )
             },
             label = { Text(stringResource(R.string.home)) },
-            selected = currentRoute == "home",
-            onClick = { onNavigate("home") }
+            selected = currentRoute == Routes.HOME,
+            onClick = { onNavigate(Routes.HOME) }
         )
         NavigationBarItem(
             icon = {
                 Icon(
-                    imageVector = if (currentRoute == "me") Icons.Filled.Person else Icons.Outlined.Person,
+                    imageVector = if (currentRoute == Routes.ME) Icons.Filled.Person else Icons.Outlined.Person,
                     contentDescription = stringResource(R.string.me)
                 )
             },
             label = { Text(stringResource(R.string.me)) },
-            selected = currentRoute == "me",
-            onClick = { onNavigate("me") }
+            selected = currentRoute == Routes.ME,
+            onClick = { onNavigate(Routes.ME) }
         )
     }
 }

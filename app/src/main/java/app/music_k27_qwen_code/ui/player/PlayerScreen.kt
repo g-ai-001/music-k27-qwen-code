@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.music_k27_qwen_code.ui.components.QueueSheet
-import app.music_k27_qwen_code.ui.home.formatDuration
 import app.music_k27_qwen_code.ui.theme.AccentGreen
+import app.music_k27_qwen_code.utils.formatDuration
 import app.music_k27_qwen_code.ui.theme.DeepPurple
 import app.music_k27_qwen_code.ui.theme.HeartRed
 import app.music_k27_qwen_code.utils.LyricLine

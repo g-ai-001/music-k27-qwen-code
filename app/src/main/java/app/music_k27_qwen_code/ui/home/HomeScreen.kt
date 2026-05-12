@@ -59,6 +59,9 @@ import app.music_k27_qwen_code.R
 import app.music_k27_qwen_code.data.entity.Playlist
 import app.music_k27_qwen_code.data.entity.Song
 import app.music_k27_qwen_code.ui.components.AddToPlaylistSheet
+import app.music_k27_qwen_code.ui.components.RecentSongItem
+import app.music_k27_qwen_code.ui.components.SongListItem
+import app.music_k27_qwen_code.ui.navigation.Routes
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,12 +133,12 @@ fun HomeScreen(
                     songs = state.songs,
                     recentSongs = state.recentSongs,
                     onPlay = { songs, idx -> playerViewModel.playSongs(songs, idx) },
-                    onNavigateToFavorites = { navController.navigate("favorites") }
+                    onNavigateToFavorites = { navController.navigate(Routes.FAVORITES) }
                 )
                 1 -> PlaylistTab(
                     playlists = state.playlists,
                     onPlaylistClick = { playlist ->
-                        navController.navigate("playlist_detail/${playlist.id}/${playlist.name}")
+                        navController.navigate(Routes.playlistDetail(playlist.id, playlist.name))
                     }
                 )
                 2 -> ArtistsTab(songs = state.songs)
@@ -172,7 +175,7 @@ fun HomeContent(
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(recentSongs) { song ->
-                        RecentlyPlayedItem(song = song, onClick = { onPlay(recentSongs, recentSongs.indexOf(song)) })
+                        RecentSongItem(song = song, onClick = { onPlay(recentSongs, recentSongs.indexOf(song)) })
                     }
                 }
             }
@@ -204,7 +207,8 @@ fun HomeContent(
             SongListItem(
                 song = song,
                 onClick = { onPlay(songs, songs.indexOf(song)) },
-                onMoreClick = {
+                trailingIcon = androidx.compose.material.icons.Icons.Filled.MoreVert,
+                onTrailingClick = {
                     selectedSongId = song.id
                     showAddToPlaylist = true
                 }
@@ -221,30 +225,6 @@ fun HomeContent(
 }
 
 @Composable
-fun RecentlyPlayedItem(song: Song, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .width(100.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = song.title,
-            fontSize = 12.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
 fun PlaylistCard(title: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
@@ -255,47 +235,6 @@ fun PlaylistCard(title: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-fun SongListItem(
-    song: Song,
-    onClick: () -> Unit,
-    onMoreClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = song.title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                text = song.artist,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Text(
-            text = formatDuration(song.duration),
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        IconButton(onClick = onMoreClick) {
-            Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(20.dp))
-        }
     }
 }
 
@@ -379,9 +318,3 @@ fun AlbumsTab(songs: List<Song>) {
     }
 }
 
-fun formatDuration(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return String.format("%02d:%02d", minutes, seconds)
-}

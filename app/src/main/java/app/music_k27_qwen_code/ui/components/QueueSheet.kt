@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.music_k27_qwen_code.data.entity.Song
-import app.music_k27_qwen_code.ui.home.formatDuration
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,15 +85,17 @@ fun QueueSheet(
             ) {
                 itemsIndexed(playlist) { index, song ->
                     val isCurrent = uiState.currentSong?.id == song.id
-                    QueueSongItem(
+                    SongListItem(
                         song = song,
-                        isCurrent = isCurrent,
                         onClick = {
                             playerViewModel.playSongs(playlist, index)
                         },
-                        onRemove = {
+                        trailingIcon = androidx.compose.material.icons.Icons.Filled.Delete,
+                        onTrailingClick = {
                             playerViewModel.removeFromQueue(index)
-                        }
+                        },
+                        isCurrent = isCurrent,
+                        iconSize = 40.dp
                     )
                 }
             }
@@ -103,58 +104,3 @@ fun QueueSheet(
     }
 }
 
-@Composable
-fun QueueSongItem(
-    song: Song,
-    isCurrent: Boolean,
-    onClick: () -> Unit,
-    onRemove: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(
-                    if (isCurrent) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                )
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = song.title,
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = if (isCurrent) MaterialTheme.colorScheme.primary else Color.Unspecified
-            )
-            Text(
-                text = song.artist,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Text(
-            text = formatDuration(song.duration),
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        IconButton(onClick = onRemove) {
-            Icon(
-                Icons.Filled.Delete,
-                contentDescription = "移除",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}

@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.music_k27_qwen_code.data.entity.Song
-import app.music_k27_qwen_code.ui.home.formatDuration
+import app.music_k27_qwen_code.ui.components.SongListItem
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
 import androidx.compose.ui.platform.LocalContext
 
@@ -110,10 +110,11 @@ fun PlaylistDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(state.songs) { song ->
-                    SongItem(
+                    SongListItem(
                         song = song,
                         onClick = { playerViewModel.playSongs(state.songs, state.songs.indexOf(song)) },
-                        onMoreClick = {
+                        trailingIcon = androidx.compose.material.icons.Icons.Filled.MoreVert,
+                        onTrailingClick = {
                             selectedSong = song
                             showDeleteDialog = true
                         }
@@ -193,43 +194,3 @@ fun RenamePlaylistDialog(
     )
 }
 
-@Composable
-fun SongItem(
-    song: Song,
-    onClick: () -> Unit,
-    onMoreClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = song.title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                text = song.artist,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Text(
-            text = formatDuration(song.duration),
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        IconButton(onClick = onMoreClick) {
-            Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(20.dp))
-        }
-    }
-}

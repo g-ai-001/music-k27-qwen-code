@@ -55,6 +55,8 @@ import androidx.navigation.NavController
 import app.music_k27_qwen_code.R
 import app.music_k27_qwen_code.data.entity.Playlist
 import app.music_k27_qwen_code.data.entity.Song
+import app.music_k27_qwen_code.ui.components.RecentSongItem
+import app.music_k27_qwen_code.ui.navigation.Routes
 import app.music_k27_qwen_code.ui.theme.AccentGreen
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
 
@@ -79,7 +81,7 @@ fun MeScreen(
             StatsRow(
                 favoriteCount = state.favoriteCount,
                 localCount = state.localCount,
-                onFavoritesClick = { navController.navigate("favorites") }
+                onFavoritesClick = { navController.navigate(Routes.FAVORITES) }
             )
         }
         item {
@@ -94,7 +96,7 @@ fun MeScreen(
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(state.recentSongs) { song ->
-                        RecentItem(song = song, onClick = {
+                        RecentSongItem(song = song, onClick = {
                             playerViewModel.playSongs(state.recentSongs, state.recentSongs.indexOf(song))
                         })
                     }
@@ -313,30 +315,6 @@ fun StatItem(
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = count.toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-fun RecentItem(song: Song, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .width(100.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = song.title,
-            fontSize = 12.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
 
