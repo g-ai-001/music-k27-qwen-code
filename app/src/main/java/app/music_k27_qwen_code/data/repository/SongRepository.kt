@@ -13,5 +13,7 @@ class SongRepository(private val songDao: SongDao) {
 
     suspend fun deleteAll() = songDao.deleteAll()
 
+    suspend fun deleteById(id: Long) = songDao.deleteById(id)
+
     fun searchSongs(query: String): Flow<List<Song>> = songDao.searchSongs(query)
 }
