@@ -86,9 +86,15 @@
 - [x] 通过 GitHub Actions CI 流水线
 - [x] 创建 Git Tag v0.2.1 发布
 
-### 版本 0.3.0 (待规划)
-**目标**: 优化播放体验与UI细节
-- 通知栏播放器
-- 锁屏控制
-- 音频焦点处理
-- 随机播放与循环模式
+### 版本 0.3.0 (已完成)
+**目标**: 优化播放体验与UI细节，完善后台播放控制
+
+- [x] 完善 MediaSession 元数据与播放状态，支持系统锁屏控制
+- [x] 实现音频焦点处理（AudioManager.requestAudioFocus），来电/其他应用播放时自动暂停
+- [x] 实现随机播放模式（Shuffle）与循环模式（Repeat：单曲循环/列表循环/不循环）
+- [x] 使用 DataStore 持久化保存播放模式偏好
+- [x] 播放详情页 UI 添加循环/随机切换按钮
+- [x] 补充单元测试（PlaybackSettingsRepository、SharedPlayerViewModel 新功能）
+- [x] 更新版本号至 0.3.0
+- [x] 通过 GitHub Actions CI 流水线
+- [x] 创建 Git Tag v0.3.0 发布

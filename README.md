@@ -23,6 +23,15 @@
 
 ## 版本历史
 
+### v0.3.0
+- 优化播放体验与 UI 细节，完善后台播放控制
+- 完善 MediaSession 元数据与播放状态，支持系统锁屏控制
+- 实现音频焦点处理，来电或其他应用播放时自动暂停/恢复
+- 实现随机播放模式与循环模式（单曲循环/列表循环/不循环）
+- 使用 DataStore 持久化保存播放模式偏好
+- 播放详情页 UI 添加循环/随机切换按钮
+- 补充单元测试（PlaybackSettingsRepository、SharedPlayerViewModel）
+
 ### v0.2.1
 - 重构优化存量代码，修复架构缺陷，补充单元测试
 - 修复 SharedPlayerViewModel Flow 泄漏与生命周期问题
@@ -51,16 +60,9 @@
 - 优化日志系统：添加文件轮转与单文件大小限制
 - 添加 Room 数据库 fallbackToDestructiveMigration 策略
 
-### v0.1.1
-- 修复 Room 数据库 KSP 编译错误（补充缺失的实体类）
-- 完善数据模型：PlaylistSongMap、Favorite、RecentPlay
-
-### v0.1.0
-- 搭建项目框架与 CI/CD 流水线
-- 实现本地音乐扫描与数据库持久化
-- 实现音乐播放服务与通知栏控制
-- 实现首页、播放详情页、我的页面基础 UI
-- 实现歌词解析与同步显示
+### v0.1.x (早期版本)
+- v0.1.1：修复 Room 数据库 KSP 编译错误，补充 PlaylistSongMap、Favorite、RecentPlay 实体类
+- v0.1.0：搭建项目框架与 CI/CD 流水线，实现本地音乐扫描、播放服务、基础 UI 与歌词解析
 
 ## 构建与运行
 

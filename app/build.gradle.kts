@@ -12,8 +12,8 @@ android {
         applicationId = "app.music_k27_qwen_code"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "0.2.1"
+        versionCode = 6
+        versionName = "0.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
