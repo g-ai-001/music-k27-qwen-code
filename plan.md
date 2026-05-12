@@ -73,17 +73,18 @@
 - [x] 通过 GitHub Actions CI 流水线
 - [x] 创建 Git Tag v0.2.0 发布
 
-### 版本 0.2.1 (进行中)
+### 版本 0.2.1 (已完成)
 **目标**: 重构优化存量代码，修复架构缺陷，补充单元测试
 
-- [ ] 修复 SharedPlayerViewModel Flow 泄漏与生命周期问题
-- [ ] 提取可复用 UI 组件（统一歌曲列表项、最近播放项）
-- [ ] 移动 formatDuration 到 utils 模块，提取导航路由常量
-- [ ] 添加基础单元测试（ViewModel、Repository、工具类）
-- [ ] 为大 Composable 添加错误处理与日志
-- [ ] 更新版本号至 0.2.1
-- [ ] 通过 GitHub Actions CI 流水线
-- [ ] 创建 Git Tag v0.2.1 发布
+- [x] 修复 SharedPlayerViewModel Flow 泄漏与生命周期问题
+- [x] 提取可复用 UI 组件（统一歌曲列表项、最近播放项）
+- [x] 移动 formatDuration 到 utils 模块，提取导航路由常量
+- [x] 添加基础单元测试（ViewModel、Repository、工具类）
+- [x] 为大 Composable 添加错误处理与日志
+- [x] 修复单元测试编译与运行时错误（coVerify、Flow mock 时序）
+- [x] 更新版本号至 0.2.1
+- [x] 通过 GitHub Actions CI 流水线
+- [x] 创建 Git Tag v0.2.1 发布
 
 ### 版本 0.3.0 (待规划)
 **目标**: 优化播放体验与UI细节
