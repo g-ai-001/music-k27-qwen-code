@@ -266,15 +266,13 @@ fun PlaylistTab() {
 fun ArtistsTab(songs: List<Song>) {
     val artists = songs.groupBy { it.artist }.toSortedMap()
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
-        artists.forEach { (artist, list) ->
-            item {
-                Text(
-                    text = "$artist (${list.size}首)",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
+        items(artists.toList()) { (artist, list) ->
+            Text(
+                text = "$artist (${list.size}首)",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
         }
     }
 }
@@ -283,15 +281,13 @@ fun ArtistsTab(songs: List<Song>) {
 fun AlbumsTab(songs: List<Song>) {
     val albums = songs.groupBy { it.album }.toSortedMap()
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
-        albums.forEach { (album, list) ->
-            item {
-                Text(
-                    text = "$album (${list.size}首)",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
+        items(albums.toList()) { (album, list) ->
+            Text(
+                text = "$album (${list.size}首)",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
         }
     }
 }
