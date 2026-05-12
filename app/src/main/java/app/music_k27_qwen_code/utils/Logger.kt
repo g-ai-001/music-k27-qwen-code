@@ -44,10 +44,14 @@ object Logger {
         }
     }
 
+    private val logLock = Any()
+
     private fun writeToFile(level: String, msg: String) {
         try {
-            checkLogFileSize()
-            logFile?.appendText("${dateFormat.format(Date())} [$level] $msg\n")
+            synchronized(logLock) {
+                checkLogFileSize()
+                logFile?.appendText("${dateFormat.format(Date())} [$level] $msg\n")
+            }
         } catch (_: Exception) {}
     }
 
