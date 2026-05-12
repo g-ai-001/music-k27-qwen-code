@@ -14,8 +14,12 @@ object Logger {
 
     private var logDir: File? = null
     private var logFile: File? = null
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
-    private val fileDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val dateFormat = ThreadLocal.withInitial {
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+    }
+    private val fileDateFormat = ThreadLocal.withInitial {
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    }
 
     fun init(context: Context) {
         val dir = context.getExternalFilesDir(null) ?: context.filesDir
@@ -23,7 +27,7 @@ object Logger {
         logDir?.let {
             if (!it.exists()) it.mkdirs()
             rotateLogsIfNeeded(it)
-            logFile = File(it, "app_${fileDateFormat.format(Date())}.log")
+            logFile = File(it, "app_${fileDateFormat.get().format(Date())}.log")
         }
     }
 
@@ -39,7 +43,7 @@ object Logger {
         if (file.length() > MAX_LOG_FILE_SIZE) {
             logDir?.let { dir ->
                 val index = dir.listFiles { f -> f.name.endsWith(".log") }?.size ?: 0
-                logFile = File(dir, "app_${fileDateFormat.format(Date())}_$index.log")
+                logFile = File(dir, "app_${fileDateFormat.get().format(Date())}_$index.log")
             }
         }
     }
@@ -50,7 +54,7 @@ object Logger {
         try {
             synchronized(logLock) {
                 checkLogFileSize()
-                logFile?.appendText("${dateFormat.format(Date())} [$level] $msg\n")
+                logFile?.appendText("${dateFormat.get().format(Date())} [$level] $msg\n")
             }
         } catch (_: Exception) {}
     }
