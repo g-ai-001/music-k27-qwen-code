@@ -9,7 +9,6 @@ import android.media.AudioManager
 import android.os.Build
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.common.util.BitmapLoader
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -17,8 +16,6 @@ import androidx.media3.ui.PlayerNotificationManager
 import app.music_k27_qwen_code.MainActivity
 import app.music_k27_qwen_code.R
 import app.music_k27_qwen_code.utils.Logger
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
 
 class MusicPlaybackService : MediaSessionService(), AudioManager.OnAudioFocusChangeListener {
 
@@ -63,16 +60,6 @@ class MusicPlaybackService : MediaSessionService(), AudioManager.OnAudioFocusCha
             this, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val bitmapLoader = object : BitmapLoader {
-            override fun supportsMimeType(mimeType: String): Boolean = false
-            override fun decode(data: ByteArray): ListenableFuture<android.graphics.Bitmap> {
-                return Futures.immediateFailedFuture(UnsupportedOperationException())
-            }
-            override fun loadBitmap(uri: android.net.Uri): ListenableFuture<android.graphics.Bitmap> {
-                return Futures.immediateFailedFuture(UnsupportedOperationException())
-            }
-        }
-
         notificationManager = PlayerNotificationManager.Builder(
             this, NOTIFICATION_ID, CHANNEL_ID
         )
@@ -108,7 +95,6 @@ class MusicPlaybackService : MediaSessionService(), AudioManager.OnAudioFocusCha
             .build()
             .apply {
                 setPlayer(player)
-                setBitmapLoader(bitmapLoader)
                 setUseRewindAction(false)
                 setUseFastForwardAction(false)
                 setUseStopAction(false)
