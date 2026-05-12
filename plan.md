@@ -98,3 +98,16 @@
 - [x] 更新版本号至 0.3.0
 - [x] 通过 GitHub Actions CI 流水线
 - [x] 创建 Git Tag v0.3.0 发布
+
+### 版本 0.3.1 (进行中)
+**目标**: 重构优化存量代码，修复架构缺陷与潜在Bug
+
+- [ ] 修复 SharedPlayerViewModel Player.Listener 内存泄漏
+- [ ] 优化 PlayerScreen Slider 拖动闪烁问题
+- [ ] 优化 LyricsMode 歌词滚动实现（移除魔法数字 48dp）
+- [ ] 修复音频焦点恢复时自动播放问题（尊重用户手动暂停）
+- [ ] 优化 Logger 线程安全性（添加同步锁）
+- [ ] 添加 SharedPlayerViewModel 单元测试
+- [ ] 更新版本号至 0.3.1
+- [ ] 通过 GitHub Actions CI 流水线
+- [ ] 创建 Git Tag v0.3.1 发布

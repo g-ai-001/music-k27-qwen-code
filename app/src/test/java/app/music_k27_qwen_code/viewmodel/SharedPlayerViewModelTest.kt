@@ -3,6 +3,7 @@ package app.music_k27_qwen_code.viewmodel
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import app.music_k27_qwen_code.MusicApplication
 import app.music_k27_qwen_code.data.AppDatabase
 import app.music_k27_qwen_code.data.dao.FavoriteDao
@@ -10,9 +11,12 @@ import app.music_k27_qwen_code.data.dao.RecentPlayDao
 import app.music_k27_qwen_code.data.entity.Song
 import app.music_k27_qwen_code.data.repository.PlaybackSettingsRepository
 import app.music_k27_qwen_code.data.repository.SongRepository
+import com.google.common.util.concurrent.ListenableFuture
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.unmockkConstructor
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -60,11 +64,20 @@ class SharedPlayerViewModelTest {
         every { application.playbackSettingsRepository } returns playbackSettingsRepository
         every { playbackSettingsRepository.shuffleEnabled } returns MutableStateFlow(false)
         every { playbackSettingsRepository.repeatMode } returns MutableStateFlow(0)
+
+        mockkConstructor(SessionToken::class)
+        mockkConstructor(MediaController.Builder::class)
+        mockkConstructor(android.content.ComponentName::class)
+        val future = mockk<ListenableFuture<MediaController>>(relaxed = true)
+        every { anyConstructed<MediaController.Builder>().buildAsync() } returns future
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkConstructor(MediaController.Builder::class)
+        unmockkConstructor(SessionToken::class)
+        unmockkConstructor(android.content.ComponentName::class)
     }
 
     @Test
