@@ -22,9 +22,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.music_k27_qwen_code.ui.components.BottomNavBar
 import app.music_k27_qwen_code.ui.components.MiniPlayer
+import app.music_k27_qwen_code.ui.favorite.FavoriteSongsScreen
 import app.music_k27_qwen_code.ui.home.HomeScreen
 import app.music_k27_qwen_code.ui.me.MeScreen
 import app.music_k27_qwen_code.ui.player.PlayerScreen
+import app.music_k27_qwen_code.ui.playlist.PlaylistDetailScreen
 import app.music_k27_qwen_code.ui.theme.MusicK27QwenCodeTheme
 import app.music_k27_qwen_code.utils.Logger
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
@@ -76,7 +78,9 @@ fun MusicApp() {
 
     Scaffold(
         bottomBar = {
-            if (currentRoute != "player") {
+            val hideBottomBarRoutes = setOf("player", "favorites", "playlist_detail/{playlistId}/{playlistName}")
+            val shouldShowBottomBar = currentRoute != null && !hideBottomBarRoutes.any { currentRoute.startsWith(it.split("/").first()) }
+            if (shouldShowBottomBar) {
                 Column {
                     MiniPlayer(
                         playerState = playerState,
@@ -105,10 +109,26 @@ fun MusicApp() {
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("home") { HomeScreen(playerViewModel = playerViewModel) }
-            composable("me") { MeScreen(playerViewModel = playerViewModel) }
+            composable("home") { HomeScreen(playerViewModel = playerViewModel, navController = navController) }
+            composable("me") { MeScreen(playerViewModel = playerViewModel, navController = navController) }
             composable("player") {
                 PlayerScreen(
+                    playerViewModel = playerViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("favorites") {
+                FavoriteSongsScreen(
+                    playerViewModel = playerViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("playlist_detail/{playlistId}/{playlistName}") { backStackEntry ->
+                val playlistId = backStackEntry.arguments?.getString("playlistId")?.toLongOrNull() ?: 0L
+                val playlistName = backStackEntry.arguments?.getString("playlistName") ?: ""
+                PlaylistDetailScreen(
+                    playlistId = playlistId,
+                    playlistName = playlistName,
                     playerViewModel = playerViewModel,
                     onBack = { navController.popBackStack() }
                 )

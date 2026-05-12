@@ -23,20 +23,26 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,14 +54,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import app.music_k27_qwen_code.R
+import app.music_k27_qwen_code.data.entity.Playlist
 import app.music_k27_qwen_code.data.entity.Song
+import app.music_k27_qwen_code.ui.components.AddToPlaylistSheet
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     playerViewModel: SharedPlayerViewModel,
+    navController: NavController,
     homeViewModel: HomeViewModel = viewModel()
 ) {
     val state by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -116,10 +126,18 @@ fun HomeScreen(
             }
 
             when (state.selectedTab) {
-                0 -> HomeContent(songs = state.songs, onPlay = { songs, idx ->
-                    playerViewModel.playSongs(songs, idx)
-                })
-                1 -> PlaylistTab()
+                0 -> HomeContent(
+                    songs = state.songs,
+                    recentSongs = state.recentSongs,
+                    onPlay = { songs, idx -> playerViewModel.playSongs(songs, idx) },
+                    onNavigateToFavorites = { navController.navigate("favorites") }
+                )
+                1 -> PlaylistTab(
+                    playlists = state.playlists,
+                    onPlaylistClick = { playlist ->
+                        navController.navigate("playlist_detail/${playlist.id}/${playlist.name}")
+                    }
+                )
                 2 -> ArtistsTab(songs = state.songs)
                 3 -> AlbumsTab(songs = state.songs)
             }
@@ -128,7 +146,15 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeContent(songs: List<Song>, onPlay: (List<Song>, Int) -> Unit) {
+fun HomeContent(
+    songs: List<Song>,
+    recentSongs: List<Song>,
+    onPlay: (List<Song>, Int) -> Unit,
+    onNavigateToFavorites: () -> Unit
+) {
+    var showAddToPlaylist by remember { mutableStateOf(false) }
+    var selectedSongId by remember { mutableStateOf(0L) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -141,9 +167,13 @@ fun HomeContent(songs: List<Song>, onPlay: (List<Song>, Int) -> Unit) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(songs.take(10)) { song ->
-                    RecentlyPlayedItem(song = song, onClick = { onPlay(songs, songs.indexOf(song)) })
+            if (recentSongs.isEmpty()) {
+                Text("暂无最近播放记录", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+            } else {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(recentSongs) { song ->
+                        RecentlyPlayedItem(song = song, onClick = { onPlay(recentSongs, recentSongs.indexOf(song)) })
+                    }
                 }
             }
         }
@@ -157,8 +187,7 @@ fun HomeContent(songs: List<Song>, onPlay: (List<Song>, Int) -> Unit) {
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PlaylistCard(title = stringResource(R.string.all_songs), onClick = { onPlay(songs, 0) })
-                PlaylistCard(title = stringResource(R.string.my_favorites), onClick = { })
-                PlaylistCard(title = stringResource(R.string.create_playlist), onClick = { })
+                PlaylistCard(title = stringResource(R.string.my_favorites), onClick = onNavigateToFavorites)
             }
         }
 
@@ -174,9 +203,20 @@ fun HomeContent(songs: List<Song>, onPlay: (List<Song>, Int) -> Unit) {
         items(songs) { song ->
             SongListItem(
                 song = song,
-                onClick = { onPlay(songs, songs.indexOf(song)) }
+                onClick = { onPlay(songs, songs.indexOf(song)) },
+                onMoreClick = {
+                    selectedSongId = song.id
+                    showAddToPlaylist = true
+                }
             )
         }
+    }
+
+    if (showAddToPlaylist) {
+        AddToPlaylistSheet(
+            songId = selectedSongId,
+            onDismiss = { showAddToPlaylist = false }
+        )
     }
 }
 
@@ -219,7 +259,11 @@ fun PlaylistCard(title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun SongListItem(song: Song, onClick: () -> Unit) {
+fun SongListItem(
+    song: Song,
+    onClick: () -> Unit,
+    onMoreClick: () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -249,16 +293,59 @@ fun SongListItem(song: Song, onClick: () -> Unit) {
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        IconButton(onClick = { }) {
+        IconButton(onClick = onMoreClick) {
             Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }
 
 @Composable
-fun PlaylistTab() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("歌单功能即将上线", color = MaterialTheme.colorScheme.onSurfaceVariant)
+fun PlaylistTab(
+    playlists: List<Playlist>,
+    onPlaylistClick: (Playlist) -> Unit
+) {
+    if (playlists.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("暂无自建歌单", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(playlists) { playlist ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPlaylistClick(playlist) }
+                        .padding(vertical = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = playlist.name,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "自建歌单",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
@@ -35,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.music_k27_qwen_code.ui.components.QueueSheet
 import app.music_k27_qwen_code.ui.home.formatDuration
 import app.music_k27_qwen_code.ui.theme.AccentGreen
 import app.music_k27_qwen_code.ui.theme.DeepPurple
@@ -60,6 +63,7 @@ fun PlayerScreen(
     playerViewModel: SharedPlayerViewModel,
     onBack: () -> Unit
 ) {
+    var showQueue by remember { mutableStateOf(false) }
     val state by playerViewModel.uiState.collectAsStateWithLifecycle()
     val song = state.currentSong ?: return
 
@@ -200,9 +204,19 @@ fun PlayerScreen(
                     ToggleButton(text = "词", active = state.showLyrics) {
                         playerViewModel.toggleLyricsMode()
                     }
+                    ToggleButton(text = "队列", active = false) {
+                        showQueue = true
+                    }
                 }
             }
         }
+    }
+
+    if (showQueue) {
+        QueueSheet(
+            playerViewModel = playerViewModel,
+            onDismiss = { showQueue = false }
+        )
     }
 }
 

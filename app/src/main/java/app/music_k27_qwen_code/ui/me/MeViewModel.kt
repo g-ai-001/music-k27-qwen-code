@@ -22,7 +22,7 @@ class MeViewModel(application: Application) : AndroidViewModel(application) {
     private val songRepository = (application as MusicApplication).songRepository
     private val favoriteDao = (application as MusicApplication).database.favoriteDao()
     private val recentPlayDao = (application as MusicApplication).database.recentPlayDao()
-    private val playlistDao = (application as MusicApplication).database.playlistDao()
+    private val playlistRepository = (application as MusicApplication).playlistRepository
 
     private val _uiState = MutableStateFlow(MeUiState())
     val uiState: StateFlow<MeUiState> = _uiState.asStateFlow()
@@ -33,7 +33,7 @@ class MeViewModel(application: Application) : AndroidViewModel(application) {
                 songRepository.allSongs,
                 favoriteDao.getFavoriteIds(),
                 recentPlayDao.getRecentPlays(),
-                playlistDao.getAllPlaylists()
+                playlistRepository.allPlaylists
             ) { songs, favorites, recentPlays, playlists ->
                 val recentSongIds = recentPlays.map { it.songId }
                 val recentSongs = songs.filter { it.id in recentSongIds }.take(10)
@@ -45,6 +45,30 @@ class MeViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }.collect { state ->
                 _uiState.value = state
+            }
+        }
+    }
+
+    fun createPlaylist(name: String) {
+        viewModelScope.launch {
+            if (name.isNotBlank()) {
+                playlistRepository.createPlaylist(name)
+            }
+        }
+    }
+
+    fun deletePlaylist(id: Long) {
+        viewModelScope.launch {
+            playlistRepository.deletePlaylist(id)
+        }
+    }
+
+    fun addSongToPlaylist(playlistId: Long, songId: Long) {
+        viewModelScope.launch {
+            val existingIds = playlistRepository.getPlaylistSongIds(playlistId)
+            if (songId !in existingIds) {
+                val orderIndex = existingIds.size
+                playlistRepository.addSongToPlaylist(playlistId, songId, orderIndex)
             }
         }
     }

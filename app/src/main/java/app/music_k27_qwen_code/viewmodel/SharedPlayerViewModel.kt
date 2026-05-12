@@ -30,7 +30,8 @@ data class PlayerUiState(
     val lyrics: List<app.music_k27_qwen_code.utils.LyricLine> = emptyList(),
     val currentLyricIndex: Int = -1,
     val isFavorite: Boolean = false,
-    val showLyrics: Boolean = false
+    val showLyrics: Boolean = false,
+    val queueSongs: List<Song> = emptyList()
 )
 
 class SharedPlayerViewModel(application: Application) : AndroidViewModel(application) {
@@ -43,6 +44,7 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
 
     private var mediaController: MediaController? = null
     private val _playlist = MutableStateFlow<List<Song>>(emptyList())
+    val playlist: StateFlow<List<Song>> = _playlist.asStateFlow()
 
     init {
         initMediaController(application)
@@ -136,7 +138,27 @@ class SharedPlayerViewModel(application: Application) : AndroidViewModel(applica
         controller.seekTo(startIndex, 0)
         controller.prepare()
         controller.play()
+        _uiState.value = _uiState.value.copy(queueSongs = songs)
         Logger.i("播放列表: ${songs.size} 首, 起始索引: $startIndex")
+    }
+
+    fun removeFromQueue(index: Int) {
+        val controller = mediaController ?: return
+        val currentList = _playlist.value.toMutableList()
+        if (index !in currentList.indices) return
+        currentList.removeAt(index)
+        _playlist.value = currentList
+        _uiState.value = _uiState.value.copy(queueSongs = currentList)
+        controller.removeMediaItem(index)
+        Logger.i("从播放队列移除歌曲, 索引: $index")
+    }
+
+    fun clearQueue() {
+        val controller = mediaController ?: return
+        _playlist.value = emptyList()
+        _uiState.value = _uiState.value.copy(queueSongs = emptyList())
+        controller.clearMediaItems()
+        Logger.i("清空播放队列")
     }
 
     fun playPause() {

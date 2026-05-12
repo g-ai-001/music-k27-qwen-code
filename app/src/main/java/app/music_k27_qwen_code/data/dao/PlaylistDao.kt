@@ -27,6 +27,12 @@ interface PlaylistDao {
     @Query("DELETE FROM playlist_song_map WHERE playlistId = :playlistId AND songId = :songId")
     suspend fun removeSongFromPlaylist(playlistId: Long, songId: Long)
 
+    @Query("UPDATE playlists SET name = :newName WHERE id = :id")
+    suspend fun updatePlaylistName(id: Long, newName: String)
+
+    @Query("SELECT songId FROM playlist_song_map WHERE playlistId = :playlistId ORDER BY orderIndex ASC")
+    fun getSongIdsInPlaylist(playlistId: Long): Flow<List<Long>>
+
     @Transaction
     @Query("""
         SELECT s.* FROM songs s

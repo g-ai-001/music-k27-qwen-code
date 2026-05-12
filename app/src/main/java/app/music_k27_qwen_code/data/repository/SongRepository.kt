@@ -9,6 +9,8 @@ class SongRepository(private val songDao: SongDao) {
 
     suspend fun getSongById(id: Long): Song? = songDao.getSongById(id)
 
+    suspend fun getSongsByIds(ids: List<Long>): List<Song> = songDao.getSongsByIds(ids)
+
     suspend fun insertAll(songs: List<Song>) = songDao.insertAll(songs)
 
     suspend fun deleteAll() = songDao.deleteAll()

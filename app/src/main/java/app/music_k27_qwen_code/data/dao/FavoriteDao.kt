@@ -20,4 +20,11 @@ interface FavoriteDao {
 
     @Query("DELETE FROM favorites WHERE songId = :songId")
     suspend fun removeFavorite(songId: Long)
+
+    @Query("""
+        SELECT s.* FROM songs s
+        INNER JOIN favorites f ON s.id = f.songId
+        ORDER BY f.songId DESC
+    """)
+    fun getFavoriteSongs(): Flow<List<app.music_k27_qwen_code.data.entity.Song>>
 }
