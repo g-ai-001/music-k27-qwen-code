@@ -1,9 +1,9 @@
 package app.music_k27_qwen_code.viewmodel
 
+import android.app.Application
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
 import app.music_k27_qwen_code.MusicApplication
 import app.music_k27_qwen_code.data.AppDatabase
 import app.music_k27_qwen_code.data.dao.FavoriteDao
@@ -11,12 +11,9 @@ import app.music_k27_qwen_code.data.dao.RecentPlayDao
 import app.music_k27_qwen_code.data.entity.Song
 import app.music_k27_qwen_code.data.repository.PlaybackSettingsRepository
 import app.music_k27_qwen_code.data.repository.SongRepository
-import com.google.common.util.concurrent.ListenableFuture
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkConstructor
-import io.mockk.unmockkConstructor
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -64,25 +61,16 @@ class SharedPlayerViewModelTest {
         every { application.playbackSettingsRepository } returns playbackSettingsRepository
         every { playbackSettingsRepository.shuffleEnabled } returns MutableStateFlow(false)
         every { playbackSettingsRepository.repeatMode } returns MutableStateFlow(0)
-
-        mockkConstructor(SessionToken::class)
-        mockkConstructor(MediaController.Builder::class)
-        mockkConstructor(android.content.ComponentName::class)
-        val future = mockk<ListenableFuture<MediaController>>(relaxed = true)
-        every { anyConstructed<MediaController.Builder>().buildAsync() } returns future
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        unmockkConstructor(MediaController.Builder::class)
-        unmockkConstructor(SessionToken::class)
-        unmockkConstructor(android.content.ComponentName::class)
     }
 
     @Test
     fun `initial uiState has correct default values`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
+        val viewModel = TestSharedPlayerViewModel(application, null)
         advanceUntilIdle()
 
         assertEquals(null, viewModel.uiState.value.currentSong)
@@ -95,7 +83,7 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun `toggleLyricsMode switches showLyrics state`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
+        val viewModel = TestSharedPlayerViewModel(application, null)
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.showLyrics)
@@ -107,7 +95,7 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun `playSongs with empty list does nothing`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
+        val viewModel = TestSharedPlayerViewModel(application, null)
         advanceUntilIdle()
 
         viewModel.playSongs(emptyList(), 0)
@@ -116,7 +104,7 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun `playSongs with invalid startIndex does nothing`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
+        val viewModel = TestSharedPlayerViewModel(application, null)
         advanceUntilIdle()
 
         val songs = listOf(
@@ -128,7 +116,7 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun `toggleFavorite with null currentSong does nothing`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
+        val viewModel = TestSharedPlayerViewModel(application, null)
         advanceUntilIdle()
 
         viewModel.toggleFavorite()
@@ -138,10 +126,8 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun `cycleRepeatMode cycles through modes`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
         val mediaController = mockk<MediaController>(relaxed = true)
-        injectMediaController(viewModel, mediaController)
-
+        val viewModel = TestSharedPlayerViewModel(application, mediaController)
         advanceUntilIdle()
 
         viewModel.cycleRepeatMode()
@@ -150,10 +136,8 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun `toggleShuffle toggles shuffle mode`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
         val mediaController = mockk<MediaController>(relaxed = true)
-        injectMediaController(viewModel, mediaController)
-
+        val viewModel = TestSharedPlayerViewModel(application, mediaController)
         advanceUntilIdle()
 
         every { mediaController.shuffleModeEnabled } returns false
@@ -163,19 +147,20 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun `removeFromQueue with invalid index does nothing`() = runTest {
-        val viewModel = SharedPlayerViewModel(application)
         val mediaController = mockk<MediaController>(relaxed = true)
-        injectMediaController(viewModel, mediaController)
-
+        val viewModel = TestSharedPlayerViewModel(application, mediaController)
         advanceUntilIdle()
 
         viewModel.removeFromQueue(-1)
         verify(exactly = 0) { mediaController.removeMediaItem(any()) }
     }
 
-    private fun injectMediaController(viewModel: SharedPlayerViewModel, controller: MediaController) {
-        val field = SharedPlayerViewModel::class.java.getDeclaredField("mediaController")
-        field.isAccessible = true
-        field.set(viewModel, controller)
+    class TestSharedPlayerViewModel(
+        application: Application,
+        private val mockController: MediaController?
+    ) : SharedPlayerViewModel(application) {
+        override fun initMediaController(context: android.content.Context) {
+            onMediaControllerReady(mockController)
+        }
     }
 }
