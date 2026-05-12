@@ -47,6 +47,19 @@
 - [x] 更新版本号至 0.1.1
 - [x] 通过 GitHub Actions CI 流水线
 
+### 版本 0.1.2 (已完成)
+**目标**: 重构优化存量代码，修复架构缺陷与潜在Bug
+- [x] 修复 LazyColumn DSL 误用（ArtistsTab/AlbumsTab 的 forEach 改为 items）
+- [x] 优化 MediaScanner 支持增量扫描，避免全量删除再插入
+- [x] 修复 LyricParser 文件路径处理（无扩展名歌曲路径兼容性）
+- [x] 优化 SharedPlayerViewModel 播放列表索引同步与状态管理
+- [x] 修复 MiniPlayer 空状态显示与 Scaffold 底部栏布局顺序
+- [x] 优化 MusicPlaybackService 通知配置，防止服务被系统杀死
+- [x] 优化日志系统：添加文件轮转与单文件大小限制
+- [x] 添加 Room 数据库 fallbackToDestructiveMigration 策略
+- [x] 权限授予后自动触发音乐扫描
+- [x] 代码清理：统一导入格式，移除魔法数字
+
 ### 版本 0.2.0 (待规划)
 **目标**: 完善歌单管理与收藏功能
 - 自建歌单 CRUD

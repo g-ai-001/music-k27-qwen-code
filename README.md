@@ -23,6 +23,17 @@
 
 ## 版本历史
 
+### v0.1.2
+- 重构优化存量代码，修复架构缺陷与潜在 Bug
+- 修复 LazyColumn DSL 误用（ArtistsTab/AlbumsTab）
+- 优化 MediaScanner 支持增量扫描，避免全量删除再插入
+- 修复 LyricParser 无扩展名歌曲路径兼容性
+- 优化 SharedPlayerViewModel 播放列表索引同步与状态管理
+- 修复 MiniPlayer 空状态显示与 Scaffold 底部栏布局
+- 优化 MusicPlaybackService 通知配置，防止服务被系统杀死
+- 优化日志系统：添加文件轮转与单文件大小限制
+- 添加 Room 数据库 fallbackToDestructiveMigration 策略
+
 ### v0.1.1
 - 修复 Room 数据库 KSP 编译错误（补充缺失的实体类）
 - 完善数据模型：PlaylistSongMap、Favorite、RecentPlay
