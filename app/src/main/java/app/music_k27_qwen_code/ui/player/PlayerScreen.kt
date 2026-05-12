@@ -13,10 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Favorite
@@ -42,6 +43,8 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -125,9 +128,11 @@ fun PlayerScreen(
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 var sliderPosition by remember { mutableFloatStateOf(0f) }
-                LaunchedEffect(state.currentPosition, state.duration) {
-                    if (state.duration > 0) {
-                        sliderPosition = state.currentPosition.toFloat() / state.duration
+                val interactionSource = remember { MutableInteractionSource() }
+                val isDragging by interactionSource.collectIsDraggedAsState()
+                LaunchedEffect(state.currentPosition, state.duration, isDragging) {
+                    if (!isDragging && state.duration > 0) {
+                        sliderPosition = (state.currentPosition.toFloat() / state.duration).coerceIn(0f, 1f)
                     }
                 }
                 Slider(
@@ -136,6 +141,7 @@ fun PlayerScreen(
                     onValueChangeFinished = {
                         playerViewModel.seekTo((sliderPosition * state.duration).toLong())
                     },
+                    interactionSource = interactionSource,
                     colors = SliderDefaults.colors(
                         thumbColor = AccentGreen,
                         activeTrackColor = AccentGreen,
@@ -301,19 +307,18 @@ fun CoverMode(songTitle: String, artist: String, lyrics: List<LyricLine>) {
 
 @Composable
 fun LyricsMode(state: PlayerUiState) {
-    val scrollState = rememberScrollState()
+    val listState = rememberLazyListState()
     LaunchedEffect(state.currentLyricIndex) {
         if (state.currentLyricIndex >= 0) {
-            scrollState.animateScrollTo(state.currentLyricIndex * 48)
+            listState.animateScrollToItem(state.currentLyricIndex)
         }
     }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(scrollState),
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        state.lyrics.forEachIndexed { index, line ->
+        itemsIndexed(state.lyrics) { index, line ->
             val isCurrent = index == state.currentLyricIndex
             Text(
                 text = line.text,
@@ -327,7 +332,9 @@ fun LyricsMode(state: PlayerUiState) {
             )
         }
         if (state.lyrics.isEmpty()) {
-            Text("暂无歌词", color = Color.White.copy(alpha = 0.4f), fontSize = 16.sp)
+            item {
+                Text("暂无歌词", color = Color.White.copy(alpha = 0.4f), fontSize = 16.sp)
+            }
         }
     }
 }
