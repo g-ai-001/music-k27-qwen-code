@@ -25,4 +25,8 @@
     <string name="theme">装扮</string>
     <string name="daily_quote">日签</string>
     <string name="follow">关注</string>
+    <string name="channel_name">音乐播放</string>
+    <string name="channel_description">本地音乐播放器后台播放通知</string>
+    <string name="unknown_title">未知标题</string>
+    <string name="unknown_artist">未知艺术家</string>
 </resources>

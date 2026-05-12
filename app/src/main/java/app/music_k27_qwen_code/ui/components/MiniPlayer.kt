@@ -36,14 +36,12 @@ fun MiniPlayer(
     onNavigateToPlayer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val song = playerState.currentSong ?: return
-
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(64.dp)
             .background(Color.Black.copy(alpha = 0.85f))
-            .clickable { onNavigateToPlayer() }
+            .clickable(enabled = playerState.currentSong != null) { onNavigateToPlayer() }
             .padding(horizontal = 12.dp)
     ) {
         Row(
@@ -58,26 +56,28 @@ fun MiniPlayer(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
+                val title = playerState.currentSong?.title ?: "未在播放"
+                val artist = playerState.currentSong?.artist ?: "点击选择歌曲"
                 Text(
-                    text = song.title,
+                    text = title,
                     color = Color.White,
                     fontSize = 14.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = song.artist,
+                    text = artist,
                     color = Color.LightGray,
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            IconButton(onClick = onTogglePlay) {
+            IconButton(onClick = onTogglePlay, enabled = playerState.currentSong != null) {
                 Icon(
                     imageVector = if (playerState.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = if (playerState.currentSong != null) Color.White else Color.Gray,
                     modifier = Modifier.size(28.dp)
                 )
             }

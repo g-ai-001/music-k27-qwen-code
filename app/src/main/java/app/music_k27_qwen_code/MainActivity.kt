@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ import app.music_k27_qwen_code.ui.home.HomeScreen
 import app.music_k27_qwen_code.ui.me.MeScreen
 import app.music_k27_qwen_code.ui.player.PlayerScreen
 import app.music_k27_qwen_code.ui.theme.MusicK27QwenCodeTheme
+import app.music_k27_qwen_code.utils.Logger
 import app.music_k27_qwen_code.viewmodel.SharedPlayerViewModel
 
 class MainActivity : ComponentActivity() {
@@ -34,7 +36,8 @@ class MainActivity : ComponentActivity() {
     ) { permissions ->
         val allGranted = permissions.entries.all { it.value }
         if (allGranted) {
-            // 权限已授予
+            Logger.i("存储权限已授予，触发音乐扫描")
+            // 权限授予后由 HomeViewModel 自动扫描
         }
     }
 
@@ -74,24 +77,26 @@ fun MusicApp() {
     Scaffold(
         bottomBar = {
             if (currentRoute != "player") {
-                MiniPlayer(
-                    playerState = playerState,
-                    onTogglePlay = { playerViewModel.playPause() },
-                    onNavigateToPlayer = { navController.navigate("player") },
-                    modifier = Modifier
-                )
-                BottomNavBar(
-                    currentRoute = currentRoute,
-                    onNavigate = { route ->
-                        if (currentRoute != route) {
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
+                Column {
+                    MiniPlayer(
+                        playerState = playerState,
+                        onTogglePlay = { playerViewModel.playPause() },
+                        onNavigateToPlayer = { navController.navigate("player") },
+                        modifier = Modifier
+                    )
+                    BottomNavBar(
+                        currentRoute = currentRoute,
+                        onNavigate = { route ->
+                            if (currentRoute != route) {
+                                navController.navigate(route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     ) { innerPadding ->

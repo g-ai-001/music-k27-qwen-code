@@ -35,10 +35,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun scanMusic() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isScanning = true)
-            val songs = MediaScanner.scanLocalMusic(getApplication())
-            songRepository.deleteAll()
-            songRepository.insertAll(songs)
-            _uiState.value = _uiState.value.copy(isScanning = false, songs = songs)
+            val existingSongs = _uiState.value.songs
+            val result = MediaScanner.scanLocalMusic(getApplication(), existingSongs)
+            if (result.toRemove.isNotEmpty()) {
+                result.toRemove.forEach { songRepository.deleteById(it.id) }
+            }
+            if (result.toAdd.isNotEmpty()) {
+                songRepository.insertAll(result.toAdd)
+            }
+            _uiState.value = _uiState.value.copy(isScanning = false)
         }
     }
 
