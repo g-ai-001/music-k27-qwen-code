@@ -120,4 +120,3 @@ fun RecentSongItem(
     }
 }
 
-private fun Modifier.width(width: Dp): Modifier = this.then(Modifier.width(width))
