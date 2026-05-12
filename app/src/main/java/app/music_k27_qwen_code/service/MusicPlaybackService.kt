@@ -3,8 +3,13 @@ package app.music_k27_qwen_code.service
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.Build
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.BitmapLoader
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -12,8 +17,11 @@ import androidx.media3.ui.PlayerNotificationManager
 import app.music_k27_qwen_code.MainActivity
 import app.music_k27_qwen_code.R
 import app.music_k27_qwen_code.utils.Logger
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 
-class MusicPlaybackService : MediaSessionService() {
+class MusicPlaybackService : MediaSessionService(), AudioManager.OnAudioFocusChangeListener {
+
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "music_playback_channel"
@@ -22,14 +30,29 @@ class MusicPlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var exoPlayer: ExoPlayer? = null
     private var notificationManager: PlayerNotificationManager? = null
+    private var audioManager: AudioManager? = null
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private var hasAudioFocus = false
 
     override fun onCreate() {
         super.onCreate()
         Logger.i("MusicPlaybackService onCreate")
-        val player = ExoPlayer.Builder(this).build()
+        audioManager = getSystemService(AUDIO_SERVICE) as? AudioManager
+        val player = ExoPlayer.Builder(this).build().apply {
+            setAudioAttributes(
+                androidx.media3.common.AudioAttributes.Builder()
+                    .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                    .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .build(),
+                true
+            )
+        }
         exoPlayer = player
-        mediaSession = MediaSession.Builder(this, player).build()
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(MediaSessionCallback())
+            .build()
         setupNotification(player)
+        setupPlayerListener(player)
     }
 
     private fun setupNotification(player: ExoPlayer) {
@@ -39,6 +62,16 @@ class MusicPlaybackService : MediaSessionService() {
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
+
+        val bitmapLoader = object : BitmapLoader {
+            override fun supportsMimeType(mimeType: String): Boolean = false
+            override fun decode(data: ByteArray): ListenableFuture<android.graphics.Bitmap> {
+                return Futures.immediateFailedFuture(UnsupportedOperationException())
+            }
+            override fun loadBitmap(uri: android.net.Uri): ListenableFuture<android.graphics.Bitmap> {
+                return Futures.immediateFailedFuture(UnsupportedOperationException())
+            }
+        }
 
         notificationManager = PlayerNotificationManager.Builder(
             this, NOTIFICATION_ID, CHANNEL_ID
@@ -67,12 +100,15 @@ class MusicPlaybackService : MediaSessionService() {
                 }
 
                 override fun onNotificationCancelled(notificationId: Int, dismissedByUser: Boolean) {
-                    stopSelf()
+                    if (dismissedByUser) {
+                        stopSelf()
+                    }
                 }
             })
             .build()
             .apply {
                 setPlayer(player)
+                setBitmapLoader(bitmapLoader)
                 setUseRewindAction(false)
                 setUseFastForwardAction(false)
                 setUseStopAction(false)
@@ -82,12 +118,97 @@ class MusicPlaybackService : MediaSessionService() {
             }
     }
 
+    private fun setupPlayerListener(player: ExoPlayer) {
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) {
+                    requestAudioFocus()
+                } else {
+                    abandonAudioFocus()
+                }
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                mediaItem?.let {
+                    Logger.i("播放歌曲切换: ${it.mediaMetadata.title}")
+                }
+            }
+        })
+    }
+
+    private fun requestAudioFocus() {
+        if (hasAudioFocus) return
+        val am = audioManager ?: return
+        val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                .setOnAudioFocusChangeListener(this)
+                .build()
+                .also { audioFocusRequest = it }
+            am.requestAudioFocus(request)
+        } else {
+            @Suppress("DEPRECATION")
+            am.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+        }
+        hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        Logger.i("请求音频焦点: ${if (hasAudioFocus) "成功" else "失败"}")
+    }
+
+    private fun abandonAudioFocus() {
+        if (!hasAudioFocus) return
+        val am = audioManager ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
+        } else {
+            @Suppress("DEPRECATION")
+            am.abandonAudioFocus(this)
+        }
+        hasAudioFocus = false
+        Logger.i("放弃音频焦点")
+    }
+
+    override fun onAudioFocusChange(focusChange: Int) {
+        val player = exoPlayer ?: return
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Logger.i("音频焦点: GAIN")
+                if (!player.isPlaying) {
+                    player.play()
+                }
+                player.volume = 1f
+            }
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                Logger.i("音频焦点: LOSS")
+                hasAudioFocus = false
+                if (player.isPlaying) {
+                    player.pause()
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                Logger.i("音频焦点: LOSS_TRANSIENT")
+                if (player.isPlaying) {
+                    player.pause()
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Logger.i("音频焦点: LOSS_TRANSIENT_CAN_DUCK")
+                player.volume = 0.2f
+            }
+        }
+    }
+
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
         return mediaSession
     }
 
     override fun onDestroy() {
         Logger.i("MusicPlaybackService onDestroy")
+        abandonAudioFocus()
         notificationManager?.setPlayer(null)
         mediaSession?.run {
             player.release()
@@ -96,5 +217,21 @@ class MusicPlaybackService : MediaSessionService() {
         mediaSession = null
         exoPlayer = null
         super.onDestroy()
+    }
+
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            val connectionResult = super.onConnect(session, controller)
+            val availableSessionCommands = connectionResult.availableSessionCommands
+                .buildUpon()
+                .build()
+            return MediaSession.ConnectionResult.accept(
+                availableSessionCommands,
+                connectionResult.availablePlayerCommands
+            )
+        }
     }
 }
