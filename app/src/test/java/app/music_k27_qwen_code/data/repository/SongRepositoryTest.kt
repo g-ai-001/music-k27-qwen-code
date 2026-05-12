@@ -4,6 +4,7 @@ import app.music_k27_qwen_code.data.dao.SongDao
 import app.music_k27_qwen_code.data.entity.Song
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -44,7 +45,7 @@ class SongRepositoryTest {
             Song(id = 1, title = "Song 1", artist = "A", album = "B", duration = 1000, path = "/1", albumArtUri = ""),
             Song(id = 2, title = "Song 2", artist = "C", album = "D", duration = 2000, path = "/2", albumArtUri = "")
         )
-        coEvery { songDao.getAllSongs() } returns flowOf(songs)
+        every { songDao.getAllSongs() } returns flowOf(songs)
 
         val result = repository.allSongs.first()
 
