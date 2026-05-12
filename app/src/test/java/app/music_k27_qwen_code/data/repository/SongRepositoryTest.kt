@@ -47,7 +47,8 @@ class SongRepositoryTest {
         )
         every { songDao.getAllSongs() } returns flowOf(songs)
 
-        val result = repository.allSongs.first()
+        val repo = SongRepository(songDao)
+        val result = repo.allSongs.first()
 
         assertEquals(2, result.size)
         assertEquals("Song 1", result[0].title)
