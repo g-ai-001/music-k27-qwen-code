@@ -20,9 +20,9 @@ data class MeUiState(
 
 class MeViewModel(application: Application) : AndroidViewModel(application) {
     private val songRepository = (application as MusicApplication).songRepository
-    private val favoriteDao = application.database.favoriteDao()
-    private val recentPlayDao = application.database.recentPlayDao()
-    private val playlistDao = application.database.playlistDao()
+    private val favoriteDao = (application as MusicApplication).database.favoriteDao()
+    private val recentPlayDao = (application as MusicApplication).database.recentPlayDao()
+    private val playlistDao = (application as MusicApplication).database.playlistDao()
 
     private val _uiState = MutableStateFlow(MeUiState())
     val uiState: StateFlow<MeUiState> = _uiState.asStateFlow()

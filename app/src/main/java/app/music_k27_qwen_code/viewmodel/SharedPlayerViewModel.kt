@@ -35,8 +35,8 @@ data class PlayerUiState(
 
 class SharedPlayerViewModel(application: Application) : AndroidViewModel(application) {
     private val songRepository = (application as MusicApplication).songRepository
-    private val favoriteDao = application.database.favoriteDao()
-    private val recentPlayDao = application.database.recentPlayDao()
+    private val favoriteDao = (application as MusicApplication).database.favoriteDao()
+    private val recentPlayDao = (application as MusicApplication).database.recentPlayDao()
 
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
